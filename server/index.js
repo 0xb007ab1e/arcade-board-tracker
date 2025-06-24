@@ -42,6 +42,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // Enhanced health check with system info
+// Simple rate limiting - Max 10 requests per minute per IP
+const systemHealthRateLimit = {
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 requests per windowMs
+  standardHeaders: true,
+  message: { status: 'fail', message: 'Too many requests, please try again later.' }
+};
+
 app.get('/api/health/system', (req, res) => {
   const systemInfo = {
     platform: process.platform,
