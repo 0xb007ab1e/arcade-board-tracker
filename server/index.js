@@ -41,6 +41,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Enhanced health check with system info
+app.get('/api/health/system', (req, res) => {
+  const systemInfo = {
+    platform: process.platform,
+    nodeVersion: process.version,
+    uptime: process.uptime(),
+    memoryUsage: process.memoryUsage(),
+    cpuUsage: process.cpuUsage(),
+  };
+  
+  res.status(200).json({
+    status: 'success',
+    message: 'System health check',
+    environment: config.env,
+    timestamp: new Date().toISOString(),
+    system: systemInfo
+  });
+});
+
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
 
