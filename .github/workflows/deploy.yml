@@ -1,0 +1,210 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'release/**'
+  pull_request:
+    types: [opened, synchronize]
+    
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm install
+        
+      - name: Run Linting
+        run: npm run lint
+        
+      - name: Run Tests
+        run: npm test
+        
+  select-deployment:
+    name: Select Deployment Provider
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      provider: ${{ steps.set-provider.outputs.provider }}
+      branch_name: ${{ steps.extract-branch.outputs.branch_name }}
+    steps:
+      - name: Extract branch name
+        id: extract-branch
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "branch_name=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+          else
+            echo "branch_name=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Set deployment provider
+        id: set-provider
+        run: |
+          # Default provider is Vercel
+          PROVIDER="vercel"
+          
+          # Check if a specific provider is set in repository variables or secrets
+          if [ -n "${{ vars.DEPLOYMENT_PROVIDER }}" ]; then
+            PROVIDER="${{ vars.DEPLOYMENT_PROVIDER }}"
+          fi
+          
+          # Override with branch-specific provider if defined
+          BRANCH_NAME="${{ steps.extract-branch.outputs.branch_name }}"
+          BRANCH_PROVIDER_VAR="DEPLOYMENT_PROVIDER_$(echo ${BRANCH_NAME//\//_} | tr a-z A-Z)"
+          
+          if [ -n "${{ vars[format('{0}', BRANCH_PROVIDER_VAR)] }}" ]; then
+            PROVIDER="${{ vars[format('{0}', BRANCH_PROVIDER_VAR)] }}"
+          fi
+          
+          echo "Selected provider: $PROVIDER for branch: $BRANCH_NAME"
+          echo "provider=$PROVIDER" >> $GITHUB_OUTPUT
+          
+  deploy-vercel:
+    name: Deploy to Vercel
+    needs: [test, select-deployment]
+    if: needs.select-deployment.outputs.provider == 'vercel'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v20
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./
+          scope: ${{ secrets.VERCEL_SCOPE }}
+          vercel-args: '--env MONGO_URI=${{ secrets.MONGO_URI }} --env JWT_SECRET=${{ secrets.JWT_SECRET }} ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '--prod' || '' }}'
+          alias-domains: |
+            ${{ needs.select-deployment.outputs.branch_name != 'main' && format('{0}-arcade-board-tracker.vercel.app', needs.select-deployment.outputs.branch_name) || '' }}
+  
+  deploy-render:
+    name: Deploy to Render
+    needs: [test, select-deployment]
+    if: needs.select-deployment.outputs.provider == 'render'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Install Render CLI
+        run: npm install -g @render/cli
+      
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          BRANCH_NAME="${{ needs.select-deployment.outputs.branch_name }}"
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            render deploy --env MONGO_URI=${{ secrets.MONGO_URI }} --env JWT_SECRET=${{ secrets.JWT_SECRET }}
+          else
+            # Create a unique service name for the branch
+            SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | tr '/' '-')
+            render deploy --env MONGO_URI=${{ secrets.MONGO_URI }} --env JWT_SECRET=${{ secrets.JWT_SECRET }} --name arcade-board-tracker-$SANITIZED_BRANCH_NAME
+          fi
+          
+  deploy-railway:
+    name: Deploy to Railway
+    needs: [test, select-deployment]
+    if: needs.select-deployment.outputs.provider == 'railway'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Deploy to Railway
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          BRANCH_NAME="${{ needs.select-deployment.outputs.branch_name }}"
+          if [[ "$BRANCH_NAME" == "main" ]]; then
+            railway up --service arcade-board-tracker
+          else
+            # Create a unique service name for the branch
+            SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | tr '/' '-')
+            railway up --service arcade-board-tracker-$SANITIZED_BRANCH_NAME
+          fi
+          railway variable set MONGO_URI=${{ secrets.MONGO_URI }} JWT_SECRET=${{ secrets.JWT_SECRET }}
+          
+  deploy-heroku:
+    name: Deploy to Heroku
+    needs: [test, select-deployment]
+    if: needs.select-deployment.outputs.provider == 'heroku'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.12.13
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ needs.select-deployment.outputs.branch_name == 'main' && 'arcade-board-tracker' || format('arcade-board-tracker-{0}', needs.select-deployment.outputs.branch_name) }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          branch: ${{ needs.select-deployment.outputs.branch_name }}
+        env:
+          HD_MONGO_URI: ${{ secrets.MONGO_URI }}
+          HD_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          
+  deploy-netlify:
+    name: Deploy to Netlify
+    needs: [test, select-deployment]
+    if: needs.select-deployment.outputs.provider == 'netlify'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2
+        with:
+          publish-dir: './client/build'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions"
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+          overwrites-pull-request-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        timeout-minutes: 1
+        
+  notify-deployment:
+    name: Notify Deployment Status
+    needs: [select-deployment, deploy-vercel, deploy-render, deploy-railway, deploy-heroku, deploy-netlify]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Status
+        run: |
+          PROVIDER="${{ needs.select-deployment.outputs.provider }}"
+          BRANCH="${{ needs.select-deployment.outputs.branch_name }}"
+          
+          if [[ "${{ needs.deploy-vercel.result || needs.deploy-render.result || needs.deploy-railway.result || needs.deploy-heroku.result || needs.deploy-netlify.result }}" == "success" ]]; then
+            echo "Deployment of branch $BRANCH to $PROVIDER completed successfully!"
+          else
+            echo "Deployment of branch $BRANCH to $PROVIDER failed!"
+            exit 1
+          fi

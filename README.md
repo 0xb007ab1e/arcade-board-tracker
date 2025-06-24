@@ -23,6 +23,18 @@ Arcade Board Tracker is designed to help arcade machine collectors, repair techn
 - **Authentication**: JWT-based authentication
 - **File Storage**: Local file system with Multer
 
+## CI/CD Pipeline
+
+This project includes a CI/CD pipeline that automatically deploys each branch to your preferred cloud provider. The pipeline supports:
+
+- Vercel (default)
+- Render
+- Railway
+- Heroku
+- Netlify
+
+For each branch, a unique preview environment is created, allowing you to validate changes before merging to the main branch. See [CI/CD Setup Guide](docs/CI_CD_SETUP.md) for detailed instructions on configuring the pipeline.
+
 ## Getting Started
 
 ### Prerequisites
