@@ -17,7 +17,16 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cors());
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://your-frontend-domain.com', 'https://www.your-frontend-domain.com']
+    : 'http://localhost:3000',
+  optionsSuccessStatus: 200,
+  credentials: true
+};
+app.use(cors(corsOptions));
 
 // Set static folder for uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
