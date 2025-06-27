@@ -13,8 +13,10 @@
     }
   ],
   "public": true,
+  "team": "arcade-board-tracker",
   "github": {
     "enabled": true,
-    "silent": false
+    "silent": false,
+    "autoAlias": true
   }
 }

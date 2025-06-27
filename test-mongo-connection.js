@@ -18,10 +18,10 @@ mongoose.connect(mongoURI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => {
-  console.log('MongoDB connected successfully!'.green.bold);
-  mongoose.connection.close();
-})
-.catch(err => {
-  console.error('MongoDB connection failed:'.red.bold, err.message);
-});
+  .then(() => {
+    console.log('MongoDB connected successfully!'.green.bold);
+    mongoose.connection.close();
+  })
+  .catch(err => {
+    console.error('MongoDB connection failed:'.red.bold, err.message);
+  });

@@ -17,8 +17,8 @@ const register = async (req, res, next) => {
       return next(
         new AppError(
           `User with that ${existingUser.email === email ? 'email' : 'username'} already exists`,
-          400
-        )
+          400,
+        ),
       );
     }
 

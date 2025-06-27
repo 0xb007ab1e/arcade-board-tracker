@@ -57,9 +57,9 @@ const fileFilter = (req, file, cb) => {
       return cb(
         new AppError(
           `Invalid file type. Please upload only ${config.upload.allowedImageTypes.join(', ')}`,
-          400
+          400,
         ),
-        false
+        false,
       );
     }
   } else if (file.fieldname === 'boardDocuments') {
@@ -68,9 +68,9 @@ const fileFilter = (req, file, cb) => {
       return cb(
         new AppError(
           `Invalid file type. Please upload only ${config.upload.allowedDocTypes.join(', ')}`,
-          400
+          400,
         ),
-        false
+        false,
       );
     }
   }

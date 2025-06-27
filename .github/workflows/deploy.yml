@@ -82,17 +82,42 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
       
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v20
+      - name: Setup Vercel CLI with OIDC
+        uses: actions/setup-node@v3
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          scope: ${{ secrets.VERCEL_SCOPE }}
-          vercel-args: '--env MONGO_URI=${{ secrets.MONGO_URI }} --env JWT_SECRET=${{ secrets.JWT_SECRET }} ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && '--prod' || '' }}'
-          alias-domains: |
-            ${{ needs.select-deployment.outputs.branch_name != 'main' && format('{0}-arcade-board-tracker.vercel.app', needs.select-deployment.outputs.branch_name) || '' }}
+          node-version: '18'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Authenticate with Vercel
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel link --yes --token="$VERCEL_TOKEN"
+          
+      - name: Deploy to Vercel
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
+            vercel deploy --prod --token="$VERCEL_TOKEN" --env MONGO_URI="$MONGO_URI" --env JWT_SECRET="$JWT_SECRET"
+          else
+            vercel deploy --token="$VERCEL_TOKEN" --env MONGO_URI="$MONGO_URI" --env JWT_SECRET="$JWT_SECRET"
+          fi
+          
+      - name: Set alias domains
+        if: needs.select-deployment.outputs.branch_name != 'main'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          vercel alias set $(vercel inspect --token="$VERCEL_TOKEN" --output=json | jq -r '.deployment.url') ${{ needs.select-deployment.outputs.branch_name }}-arcade-board-tracker.vercel.app
   
   deploy-render:
     name: Deploy to Render
