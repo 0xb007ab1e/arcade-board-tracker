@@ -23,7 +23,7 @@ const UserSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
       match: [
-        /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/,
+        /^([\w-.]+@([\w-]+\.)+[\w-]{2,4})?$/,
         'Please provide a valid email address',
       ],
     },
@@ -46,7 +46,7 @@ const UserSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Hash password before saving
@@ -80,7 +80,7 @@ UserSchema.methods.generateAuthToken = function () {
     config.jwt.secret,
     {
       expiresIn: config.jwt.expiresIn,
-    }
+    },
   );
 };
 

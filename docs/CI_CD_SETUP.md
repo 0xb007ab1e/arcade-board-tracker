@@ -46,14 +46,14 @@ All credentials are stored as GitHub Secrets to keep them secure. To set up secr
 
 #### Provider-Specific Secrets
 
-##### Vercel
+##### Vercel (OIDC Authentication)
 
 | Secret Name | Description |
 |-------------|-------------|
-| `VERCEL_TOKEN` | Vercel API token |
 | `VERCEL_ORG_ID` | Vercel organization ID |
 | `VERCEL_PROJECT_ID` | Vercel project ID |
-| `VERCEL_SCOPE` | Vercel scope |
+| `VERCEL_OIDC_ROLE_ARN` | AWS IAM Role ARN for OIDC authentication |
+| `AWS_REGION` | AWS region for OIDC authentication |
 
 To obtain these values:
 1. Install Vercel CLI: `npm i -g vercel`
@@ -62,7 +62,7 @@ To obtain these values:
 4. Run: `vercel link` (if not already linked)
 5. Look for the `.vercel/project.json` file which contains the project ID
 6. Get the organization ID from your Vercel dashboard
-7. Create a token in your Vercel account settings
+7. Set up AWS OIDC integration for secure token-less authentication
 
 ##### Render
 
@@ -202,3 +202,50 @@ To add support for a new deployment provider:
 - Restrict access to who can view and modify GitHub Secrets
 - Regularly rotate API keys and tokens
 - Use the minimum necessary permissions for deployment tokens
+
+## Token Rotation and Revocation Procedure
+
+### Token Management
+
+| Detail | Information |
+|--------|-------------|
+| Token Owner | DevOps Team Lead |
+| Creation Date | Document when token was created (e.g., YYYY-MM-DD) |
+| Rotation Schedule | Every 90 days |
+
+### Token Rotation Process
+
+1. **Create New Token in Vercel**:
+   - Log in to the Vercel dashboard
+   - Go to Account Settings → Tokens
+   - Click "Create" to generate a new token
+   - Set appropriate scopes (minimum necessary permissions)
+   - Copy the new token (it will only be shown once)
+
+2. **Update GitHub Secret**:
+   - Go to your GitHub repository
+   - Navigate to Settings → Secrets and variables → Actions
+   - Edit the existing secret (e.g., `VERCEL_TOKEN`)
+   - Paste the new token value
+   - Click "Update secret"
+
+3. **Verify Deployment**:
+   - Trigger a test deployment to verify the new token works correctly
+   - Monitor the GitHub Actions workflow for any authentication issues
+
+### Token Revocation
+
+In case of a security incident or team member departure:
+
+1. **Revoke Token in Vercel**:
+   - Log in to the Vercel dashboard
+   - Go to Account Settings → Tokens
+   - Find the token to be revoked
+   - Click "Delete" to immediately invalidate the token
+
+2. **Create New Token**:
+   - Follow the steps above to create a new token with appropriate permissions
+
+3. **Update GitHub Secret**:
+   - Update the GitHub Secret with the new token value
+   - Document the new token creation date

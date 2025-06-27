@@ -8,8 +8,8 @@ const colors = require('colors');
 const envFile = process.env.NODE_ENV === 'production' 
   ? '.env.production'
   : process.env.NODE_ENV === 'preview'
-  ? '.env.preview'
-  : '.env';
+    ? '.env.preview'
+    : '.env';
 
 dotenv.config({ path: envFile });
 console.log(`Loading environment from: ${envFile}`.cyan.bold);
@@ -35,7 +35,7 @@ const corsOptions = {
     ? ['https://your-frontend-domain.com', 'https://www.your-frontend-domain.com']
     : 'http://localhost:3000',
   optionsSuccessStatus: 200,
-  credentials: true
+  credentials: true,
 };
 app.use(cors(corsOptions));
 
@@ -54,8 +54,8 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     auth: {
       bypass: bypassActive,
-      user: bypassActive ? req.bypassUser.id : null
-    }
+      user: bypassActive ? req.bypassUser.id : null,
+    },
   });
 });
 
@@ -65,7 +65,7 @@ const systemHealthRateLimit = {
   windowMs: 60 * 1000, // 1 minute
   max: 10, // 10 requests per windowMs
   standardHeaders: true,
-  message: { status: 'fail', message: 'Too many requests, please try again later.' }
+  message: { status: 'fail', message: 'Too many requests, please try again later.' },
 };
 
 app.get('/api/health/system', (req, res) => {
@@ -82,7 +82,7 @@ app.get('/api/health/system', (req, res) => {
     message: 'System health check',
     environment: config.env,
     timestamp: new Date().toISOString(),
-    system: systemInfo
+    system: systemInfo,
   });
 });
 

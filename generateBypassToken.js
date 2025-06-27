@@ -16,7 +16,7 @@ if (!jwtSecret) {
 const payload = {
   id: 'bypass-user',
   role: 'admin',
-  purpose: 'vercel-auth-bypass'
+  purpose: 'vercel-auth-bypass',
 };
 
 const token = jwt.sign(payload, jwtSecret, { expiresIn: '1y' });
