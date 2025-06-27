@@ -1,0 +1,13 @@
+# Ignore directories
+node_modules
+.git
+.github
+
+# Ignore development files
+*.log
+.env
+.env.*
+!.env.example
+
+# Exclude protection settings
+.vercel/protection

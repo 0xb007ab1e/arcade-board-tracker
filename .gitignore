@@ -5,6 +5,9 @@ node_modules/
 
 # Environment variables
 .env
+.env.production
+.env.preview
+.env.local
 
 # Testing
 /coverage
@@ -33,3 +36,4 @@ yarn-error.log*
 # Uploads
 server/uploads/*
 !server/uploads/.gitkeep
+.vercel

@@ -4,8 +4,15 @@ const cors = require('cors');
 const path = require('path');
 const colors = require('colors');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables based on NODE_ENV
+const envFile = process.env.NODE_ENV === 'production' 
+  ? '.env.production'
+  : process.env.NODE_ENV === 'preview'
+  ? '.env.preview'
+  : '.env';
+
+dotenv.config({ path: envFile });
+console.log(`Loading environment from: ${envFile}`.cyan.bold);
 
 // Import configuration
 const config = require('./config/config');
@@ -17,6 +24,10 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Vercel Authentication Bypass
+const vercelBypass = require('./middleware/vercelBypass');
+app.use(vercelBypass);
 
 // CORS configuration
 const corsOptions = {
@@ -33,11 +44,18 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Health check route
 app.get('/api/health', (req, res) => {
+  // Check if request has bypass user (from middleware)
+  const bypassActive = req.bypassUser ? true : false;
+  
   res.status(200).json({
     status: 'success',
     message: 'API is running',
     environment: config.env,
     timestamp: new Date().toISOString(),
+    auth: {
+      bypass: bypassActive,
+      user: bypassActive ? req.bypassUser.id : null
+    }
   });
 });
 
