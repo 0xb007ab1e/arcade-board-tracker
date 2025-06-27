@@ -88,6 +88,22 @@ arcade-board-tracker/
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Project Tracking
+
+We use GitHub Projects and Issues to track the development of this application. Our workflow is organized as follows:
+
+- **Epics**: High-level features or themes that contain multiple user stories
+- **User Stories**: Specific features described from a user's perspective
+- **Tasks**: Individual work items needed to complete a user story
+
+### Current Development Focus
+
+- **Board Management**: Implementing models and CRUD operations for arcade boards
+- **Testing Infrastructure**: Improving test reliability and coverage
+- **Security Enhancements**: Ensuring secure deployment and credential management
+
+To view our current project board and issue list, visit the [Projects](https://github.com/0xb007ab1e/arcade-board-tracker/projects) and [Issues](https://github.com/0xb007ab1e/arcade-board-tracker/issues) tabs in our repository.
+
 ## Acknowledgments
 
 - All contributors and maintainers
