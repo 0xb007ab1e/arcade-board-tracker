@@ -12,10 +12,9 @@
       "dest": "server/index.js"
     }
   ],
-  "env": {
-    "NODE_ENV": "production",
-    "MONGO_URI": "@mongo_uri",
-    "JWT_SECRET": "@jwt_secret",
-    "JWT_EXPIRE": "30d"
+  "public": true,
+  "github": {
+    "enabled": true,
+    "silent": false
   }
 }
