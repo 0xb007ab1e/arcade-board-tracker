@@ -90,37 +90,34 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel
 
-      - name: Configure AWS credentials for OIDC
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.VERCEL_OIDC_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Authenticate with Vercel using OIDC
+      - name: Authenticate with Vercel
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          TEAM_ID: arcade-board-tracker
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          vercel link --yes --token="$(aws sts get-session-token --query 'Credentials.SessionToken' --output text)"
+          vercel link --yes --token="$VERCEL_TOKEN"
           
       - name: Deploy to Vercel
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: |
           if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/heads/main" ]]; then
-            vercel deploy --prod --token="$(aws sts get-session-token --query 'Credentials.SessionToken' --output text)" --env MONGO_URI="$MONGO_URI" --env JWT_SECRET="$JWT_SECRET"
+            vercel deploy --prod --token="$VERCEL_TOKEN" --env MONGO_URI="$MONGO_URI" --env JWT_SECRET="$JWT_SECRET"
           else
-            vercel deploy --token="$(aws sts get-session-token --query 'Credentials.SessionToken' --output text)" --env MONGO_URI="$MONGO_URI" --env JWT_SECRET="$JWT_SECRET"
+            vercel deploy --token="$VERCEL_TOKEN" --env MONGO_URI="$MONGO_URI" --env JWT_SECRET="$JWT_SECRET"
           fi
           
       - name: Set alias domains
         if: needs.select-deployment.outputs.branch_name != 'main'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          vercel alias set $(vercel inspect --token="$(aws sts get-session-token --query 'Credentials.SessionToken' --output text)" --output=json | jq -r '.deployment.url') ${{ needs.select-deployment.outputs.branch_name }}-arcade-board-tracker.vercel.app
+          vercel alias set $(vercel inspect --token="$VERCEL_TOKEN" --output=json | jq -r '.deployment.url') ${{ needs.select-deployment.outputs.branch_name }}-arcade-board-tracker.vercel.app
   
   deploy-render:
     name: Deploy to Render
