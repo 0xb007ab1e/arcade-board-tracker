@@ -1,0 +1,143 @@
+/**
+ * Board model
+ */
+const mongoose = require('mongoose');
+
+const BoardSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Please provide a name for the board'],
+      trim: true,
+      maxlength: [100, 'Name cannot exceed 100 characters'],
+    },
+    manufacturer: {
+      type: String,
+      required: [true, 'Please provide a manufacturer'],
+      trim: true,
+      maxlength: [100, 'Manufacturer name cannot exceed 100 characters'],
+    },
+    model: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Model name cannot exceed 100 characters'],
+    },
+    serialNumber: {
+      type: String,
+      trim: true,
+      maxlength: [50, 'Serial number cannot exceed 50 characters'],
+    },
+    year: {
+      type: Number,
+      min: [1970, 'Year must be at least 1970'],
+      max: [new Date().getFullYear(), 'Year cannot be in the future'],
+    },
+    condition: {
+      type: String,
+      enum: {
+        values: ['excellent', 'good', 'fair', 'poor', 'non-functional'],
+        message: 'Condition must be excellent, good, fair, poor, or non-functional',
+      },
+      default: 'good',
+    },
+    purchaseDate: {
+      type: Date,
+    },
+    purchasePrice: {
+      type: Number,
+      min: [0, 'Purchase price cannot be negative'],
+    },
+    description: {
+      type: String,
+      maxlength: [1000, 'Description cannot exceed 1000 characters'],
+    },
+    notes: {
+      type: String,
+      maxlength: [1000, 'Notes cannot exceed 1000 characters'],
+    },
+    location: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Location cannot exceed 100 characters'],
+    },
+    status: {
+      type: String,
+      enum: {
+        values: ['active', 'in-repair', 'retired', 'sold'],
+        message: 'Status must be active, in-repair, retired, or sold',
+      },
+      default: 'active',
+    },
+    images: [
+      {
+        type: String, // File paths to images
+        maxlength: [255, 'Image path cannot exceed 255 characters'],
+      },
+    ],
+    documents: [
+      {
+        type: String, // File paths to documents
+        maxlength: [255, 'Document path cannot exceed 255 characters'],
+      },
+    ],
+    // References to other models - will be implemented when those models exist
+    components: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Component',
+      },
+    ],
+    repairs: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Repair',
+      },
+    ],
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'User who created this board must be specified'],
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+// Add index for improved query performance
+BoardSchema.index({ name: 1, manufacturer: 1 });
+BoardSchema.index({ status: 1 });
+BoardSchema.index({ condition: 1 });
+BoardSchema.index({ createdBy: 1 });
+
+// Virtual field for total component count
+BoardSchema.virtual('componentCount').get(function() {
+  return this.components ? this.components.length : 0;
+});
+
+// Virtual field for total repair count
+BoardSchema.virtual('repairCount').get(function() {
+  return this.repairs ? this.repairs.length : 0;
+});
+
+// Method to check if a board is repairable
+BoardSchema.methods.isRepairable = function() {
+  return this.condition !== 'non-functional' && this.status !== 'retired' && this.status !== 'sold';
+};
+
+// Pre-save hook for any data processing
+BoardSchema.pre('save', function(next) {
+  // Any pre-save processing can go here
+  next();
+});
+
+// Pre-remove hook to handle cascading deletes
+BoardSchema.pre('remove', async function(next) {
+  // When implementing Component and Repair models, add code here to:
+  // 1. Delete all associated components
+  // 2. Delete all associated repairs
+  // 3. Delete all associated files (images and documents)
+  next();
+});
+
+module.exports = mongoose.model('Board', BoardSchema);

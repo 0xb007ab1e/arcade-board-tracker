@@ -36,4 +36,10 @@ module.exports = {
 
   // Indicates whether each individual test should be reported during the run
   verbose: true,
+
+  // Setup files to run after environment is set up
+  setupFilesAfterEnv: [
+    '<rootDir>/tests/setup.js',
+    '<rootDir>/tests/setup/dbMock.js'
+  ],
 };

@@ -1,0 +1,203 @@
+/**
+ * Board controller
+ */
+const Board = require('../models/Board');
+const { AppError } = require('../middleware/error');
+
+// @desc    Create a new board
+// @route   POST /api/boards
+// @access  Private
+const createBoard = async (req, res, next) => {
+  try {
+    // Add user ID to board data
+    req.body.createdBy = req.user.id;
+    
+    // Create board
+    const board = await Board.create(req.body);
+    
+    res.status(201).json({
+      status: 'success',
+      data: {
+        board,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get all boards with pagination and filtering
+// @route   GET /api/boards
+// @access  Private
+const getAllBoards = async (req, res, next) => {
+  try {
+    // Parse pagination parameters
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Build filter object
+    const filter = {};
+    
+    // Add filters based on query parameters
+    if (req.query.name) {
+      filter.name = { $regex: req.query.name, $options: 'i' };
+    }
+    
+    if (req.query.manufacturer) {
+      filter.manufacturer = { $regex: req.query.manufacturer, $options: 'i' };
+    }
+    
+    if (req.query.condition) {
+      filter.condition = req.query.condition;
+    }
+    
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+    
+    if (req.query.year) {
+      filter.year = req.query.year;
+    }
+    
+    // If not admin, only show boards created by the user
+    if (req.user.role !== 'admin') {
+      filter.createdBy = req.user.id;
+    }
+    
+    // Execute query with pagination
+    const boards = await Board.find(filter)
+      .skip(skip)
+      .limit(limit)
+      .sort({ createdAt: -1 }); // Most recent first
+    
+    // Get total count for pagination
+    const total = await Board.countDocuments(filter);
+    
+    res.status(200).json({
+      status: 'success',
+      results: boards.length,
+      pagination: {
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        totalResults: total,
+      },
+      data: {
+        boards,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get single board by ID
+// @route   GET /api/boards/:id
+// @access  Private
+const getBoardById = async (req, res, next) => {
+  try {
+    const board = await Board.findById(req.params.id)
+      .populate('createdBy', 'username email')
+      .populate('components')
+      .populate('repairs');
+    
+    if (!board) {
+      return next(new AppError('Board not found', 404));
+    }
+    
+    // Check if user has permission to view this board
+    if (req.user.role !== 'admin' && board.createdBy._id.toString() !== req.user.id) {
+      return next(new AppError('Not authorized to access this board', 403));
+    }
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        board,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update board
+// @route   PUT /api/boards/:id
+// @access  Private
+const updateBoard = async (req, res, next) => {
+  try {
+    // Find board
+    let board = await Board.findById(req.params.id);
+    
+    if (!board) {
+      return next(new AppError('Board not found', 404));
+    }
+    
+    // Check if user has permission to update this board
+    if (req.user.role !== 'admin' && board.createdBy.toString() !== req.user.id) {
+      return next(new AppError('Not authorized to update this board', 403));
+    }
+    
+    // Prevent changing the createdBy field
+    if (req.body.createdBy) {
+      delete req.body.createdBy;
+    }
+    
+    // Update board
+    board = await Board.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true, // Return updated document
+        runValidators: true, // Run validation on update
+      }
+    );
+    
+    res.status(200).json({
+      status: 'success',
+      data: {
+        board,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete board
+// @route   DELETE /api/boards/:id
+// @access  Private
+const deleteBoard = async (req, res, next) => {
+  try {
+    // Find board
+    const board = await Board.findById(req.params.id);
+    
+    if (!board) {
+      return next(new AppError('Board not found', 404));
+    }
+    
+    // Check if user has permission to delete this board
+    if (req.user.role !== 'admin' && board.createdBy.toString() !== req.user.id) {
+      return next(new AppError('Not authorized to delete this board', 403));
+    }
+    
+    // Delete board - using remove() to trigger pre-remove hooks
+    await board.remove();
+    
+    res.status(200).json({
+      status: 'success',
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  createBoard,
+  getAllBoards,
+  getBoardById,
+  updateBoard,
+  deleteBoard,
+};

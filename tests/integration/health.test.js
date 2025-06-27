@@ -2,20 +2,30 @@
  * Health endpoint integration tests
  */
 const request = require('supertest');
-const app = require('../../server/index');
-
-// Mock database connection
-jest.mock('../../server/config/db', () => jest.fn().mockResolvedValue());
+const { app, startServer } = require('../../server/index');
 
 describe('Health Endpoints', () => {
-  beforeAll(() => {
+  // Keep track of the server instance
+  let server;
+
+  beforeAll(async () => {
     // Mock console.log to prevent logging during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Start the server for testing on a random available port (0)
+    server = await startServer(0);
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     jest.clearAllMocks();
+    
+    // Close the server to prevent open handles
+    if (server && server.close) {
+      await new Promise(resolve => {
+        server.close(resolve);
+      });
+    }
   });
 
   describe('GET /api/health', () => {

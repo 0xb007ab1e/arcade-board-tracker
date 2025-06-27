@@ -2,29 +2,52 @@
  * Auth integration tests
  */
 const request = require('supertest');
-const mongoose = require('mongoose');
-const app = require('../../server/index');
+const { app, startServer } = require('../../server/index');
+
+// Mock the User model
 const User = require('../../server/models/User');
 
-// Mock mongoose and user model
-jest.mock('../../server/models/User');
-jest.mock('../../server/config/db', () => jest.fn().mockResolvedValue());
+// Setup mocks for User model functions
+User.findOne = jest.fn();
+User.create = jest.fn();
+User.findById = jest.fn();
+
+// Reset mocks before each test
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe('Auth Endpoints', () => {
-  beforeAll(() => {
+  // Set longer timeout for all tests in this file
+  jest.setTimeout(30000);
+  
+  // Keep track of the server instance
+  let server;
+  
+  beforeAll(async () => {
     // Mock console.log to prevent logging during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
+    
+    // Start the server for testing on a random available port (0)
+    server = await startServer(0);
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     jest.clearAllMocks();
+    
+    // Close the server to prevent open handles
+    if (server && server.close) {
+      await new Promise(resolve => {
+        server.close(resolve);
+      });
+    }
   });
 
   describe('POST /api/auth/register', () => {
     it('should register a new user', async () => {
       // Mock User.findOne to return null (no existing user)
-      User.findOne.mockResolvedValue(null);
+      User.findOne.mockResolvedValueOnce(null);
       
       // Mock User.create to return a new user
       const mockUser = {
@@ -58,7 +81,7 @@ describe('Auth Endpoints', () => {
         username: 'testuser',
         email: 'existing@example.com',
       };
-      User.findOne.mockResolvedValue(existingUser);
+      User.findOne.mockResolvedValueOnce(existingUser);
 
       const response = await request(app)
         .post('/api/auth/register')
@@ -87,9 +110,10 @@ describe('Auth Endpoints', () => {
         generateAuthToken: jest.fn().mockReturnValue('test-token'),
       };
       
-      // Mock User.findOne to return the user
-      User.findOne.mockReturnValue({
-        select: jest.fn().mockResolvedValue(mockUser),
+      // Set up the findOne and select chain
+      const mockSelectFn = jest.fn().mockResolvedValueOnce(mockUser);
+      User.findOne.mockReturnValueOnce({
+        select: mockSelectFn
       });
 
       const response = await request(app)
@@ -116,9 +140,10 @@ describe('Auth Endpoints', () => {
         matchPassword: jest.fn().mockResolvedValue(false),
       };
       
-      // Mock User.findOne to return the user
-      User.findOne.mockReturnValue({
-        select: jest.fn().mockResolvedValue(mockUser),
+      // Set up the findOne and select chain
+      const mockSelectFn = jest.fn().mockResolvedValueOnce(mockUser);
+      User.findOne.mockReturnValueOnce({
+        select: mockSelectFn
       });
 
       const response = await request(app)

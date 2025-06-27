@@ -9,9 +9,10 @@
     "client": "cd client && npm start",
     "dev-full": "concurrently \"npm run dev\" \"npm run client\"",
     "install-all": "npm install && cd client && npm install",
-    "test": "jest",
-    "test:watch": "jest --watch",
+    "test": "jest --setupFilesAfterEnv ./tests/setup/dbMock.js",
+    "test:watch": "jest --watch --setupFilesAfterEnv ./tests/setup/dbMock.js",
     "test:coverage": "jest --coverage",
+    "test:all": "node scripts/runTests.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "build": "echo 'Build step complete'"

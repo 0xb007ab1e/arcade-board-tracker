@@ -1,0 +1,34 @@
+/**
+ * Board routes
+ */
+const express = require('express');
+const {
+  createBoard,
+  getAllBoards,
+  getBoardById,
+  updateBoard,
+  deleteBoard,
+} = require('../controllers/boardController');
+const { protect, restrictTo } = require('../middleware/auth');
+
+const router = express.Router();
+
+// Protect all routes
+router.use(protect);
+
+// Routes
+router
+  .route('/')
+  .get(getAllBoards)
+  .post(createBoard);
+
+router
+  .route('/:id')
+  .get(getBoardById)
+  .put(updateBoard)
+  .delete(deleteBoard);
+
+// Admin only routes - example of role-based access
+router.route('/admin/all').get(restrictTo('admin'), getAllBoards);
+
+module.exports = router;

@@ -8,14 +8,14 @@ This document provides a structured approach to tracking the implementation of u
 
 | ID | User Story | Priority | Status | Assigned To | Notes |
 |----|------------|----------|--------|-------------|-------|
-| 1.1 | Project Repository Setup | High | Not Started | | Foundation for all other work |
-| 1.2 | Development Environment Configuration | High | Not Started | | |
-| 1.3 | Basic Express Server Setup | High | Not Started | | |
-| 1.4 | Database Connection | High | Not Started | | |
-| 1.5 | User Model Implementation | Medium | Not Started | | |
-| 1.6 | User Registration Endpoint | Medium | Not Started | | |
-| 1.7 | User Login Endpoint | Medium | Not Started | | |
-| 1.8 | Authentication Middleware | Medium | Not Started | | |
+| 1.1 | Project Repository Setup | High | Completed | DevTeam | Foundation for all other work |
+| 1.2 | Development Environment Configuration | High | Completed | DevTeam | ESLint, Prettier, and Nodemon configured |
+| 1.3 | Basic Express Server Setup | High | Completed | DevTeam | Server with health endpoints functional |
+| 1.4 | Database Connection | High | Completed | DevTeam | MongoDB connection established |
+| 1.5 | User Model Implementation | Medium | Completed | DevTeam | User model with password hashing implemented |
+| 1.6 | User Registration Endpoint | Medium | Completed | DevTeam | Registration endpoint with validation |
+| 1.7 | User Login Endpoint | Medium | Completed | DevTeam | Login with JWT token generation |
+| 1.8 | Authentication Middleware | Medium | Completed | DevTeam | JWT verification and role-based access |
 
 ### Sprint 2: Board Management and Advanced Backend (2 weeks)
 
@@ -91,7 +91,8 @@ The burndown chart will be updated daily to track progress against the sprint go
 
 | Component | Unit Tests | Integration Tests | E2E Tests | Status |
 |-----------|------------|-------------------|-----------|--------|
-| User Authentication | | | | Not Started |
+| User Authentication | ✅ | ✅ | | In Progress - Some tests failing |
+| Health Endpoints | | ✅ | | Completed |
 | Board Management | | | | Not Started |
 | Component Tracking | | | | Not Started |
 | Repair Tracking | | | | Not Started |
@@ -102,7 +103,10 @@ The burndown chart will be updated daily to track progress against the sprint go
 
 | Issue ID | Description | Priority | Status | Assigned To | Related User Story |
 |----------|-------------|----------|--------|-------------|-------------------|
-| | | | | | |
+| ISSUE-1 | Fix User model unit tests (mocking issues) | High | Open | | 1.5 |
+| ISSUE-2 | Fix Auth controller integration tests | High | Open | | 1.6, 1.7 |
+| ISSUE-3 | Implement Board model | High | Open | | 1.9 |
+| ISSUE-4 | Create file upload service | Medium | Open | | 1.11 |
 
 ## Pull Request Status
 
@@ -114,7 +118,7 @@ The burndown chart will be updated daily to track progress against the sprint go
 
 | Environment | Version | Deploy Date | Status | Notes |
 |-------------|---------|-------------|--------|-------|
-| Development | | | Not Deployed | |
+| Development | 0.1.0 | 2025-06-27 | Deployed | Vercel (CI/CD with OIDC security) |
 | Staging | | | Not Deployed | |
 | Production | | | Not Deployed | |
 
@@ -123,9 +127,11 @@ The burndown chart will be updated daily to track progress against the sprint go
 | Risk | Impact | Probability | Mitigation Strategy | Status |
 |------|--------|------------|---------------------|--------|
 | Database performance issues with large inventories | High | Medium | Implement pagination, indexing, and query optimization | Monitoring |
-| Authentication security vulnerabilities | High | Low | Regular security audits, follow best practices | Planning |
+| Authentication security vulnerabilities | High | Low | Regular security audits, follow best practices, OIDC implementation | Implemented |
 | Image storage growing too large | Medium | Medium | Implement size limits, compression, consider cloud storage | Planning |
 | UI/UX complexity overwhelming users | Medium | Medium | User testing, phased rollout, tooltips and help documentation | Planning |
+| Test suite maintenance challenges | Medium | High | Fix mocking approach, implement comprehensive testing strategy | Active |
+| API security for deployment tokens | High | Medium | Implement token rotation, use least privilege, OIDC integration | Implemented |
 
 ## Notes and Decisions
 
@@ -137,6 +143,9 @@ This section will be used to record important decisions and notes that affect th
 - JWT authentication for stateless API design
 - React for frontend to allow component reuse across different views
 - File uploads stored locally for initial version, with plans to migrate to cloud storage later
+- Vercel deployment with OIDC authentication for enhanced security
+- AWS IAM integration for secure token management
+- Automatic token rotation procedure implemented for security hygiene
 
 ### Process Decisions
 
@@ -166,5 +175,34 @@ For each user story, before considering it complete:
 - [ ] Tests are written and passing
 - [ ] Documentation is updated
 - [ ] Feature is deployed to staging
+- [ ] Security review completed
 - [ ] Product owner has accepted the implementation
 - [ ] No new defects introduced
+
+## Additional Feature User Stories
+
+Based on recent development progress and analysis, the following additional user stories should be considered for future sprints:
+
+### Security and Deployment Enhancements
+
+| ID | User Story | Priority | Estimated Effort | Sprint |
+|----|------------|----------|-----------------|--------|
+| S.1 | **As an** administrator, **I want** secure token management for deployment, **so that** production credentials remain protected | High | 3 points | 2 |
+| S.2 | **As a** DevOps engineer, **I want** a token rotation procedure, **so that** security credentials are regularly refreshed | Medium | 2 points | 2 |
+| S.3 | **As a** developer, **I want** automated security scanning in the CI pipeline, **so that** vulnerabilities are caught early | Medium | 3 points | 3 |
+
+### API Testing and Quality
+
+| ID | User Story | Priority | Estimated Effort | Sprint |
+|----|------------|----------|-----------------|--------|
+| Q.1 | **As a** developer, **I want** to fix failing tests with proper mocking, **so that** the test suite is reliable | High | 2 points | 2 |
+| Q.2 | **As a** developer, **I want** to implement API integration tests for all endpoints, **so that** API changes don't break functionality | Medium | 5 points | 3 |
+| Q.3 | **As a** developer, **I want** to set up API documentation generation from tests, **so that** documentation stays in sync with code | Low | 3 points | 4 |
+
+### Database and Performance
+
+| ID | User Story | Priority | Estimated Effort | Sprint |
+|----|------------|----------|-----------------|--------|
+| D.1 | **As a** developer, **I want** to implement MongoDB indexing strategy, **so that** queries perform well at scale | Medium | 2 points | 3 |
+| D.2 | **As a** user, **I want** paginated results for all list endpoints, **so that** large data sets load efficiently | Medium | 3 points | 3 |
+| D.3 | **As an** administrator, **I want** database monitoring, **so that** performance issues can be identified early | Low | 4 points | 5 |

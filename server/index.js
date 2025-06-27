@@ -106,25 +106,53 @@ app.use('*', (req, res) => {
 // Start server
 const PORT = config.port;
 
-// Connect to database and start server
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running in ${config.env} mode on port ${PORT}`.yellow.bold);
+// Create server object but don't start it yet
+let server = null;
+
+// Only start the server if this file is run directly (not for testing)
+if (require.main === module) {
+  // Connect to database and start server
+  connectDB().then(() => {
+    server = app.listen(PORT, () => {
+      console.log(`Server running in ${config.env} mode on port ${PORT}`.yellow.bold);
+    });
   });
-});
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  console.error('UNHANDLED REJECTION! Shutting down...'.red.bold);
-  console.error(err.name, err.message);
-  process.exit(1);
-});
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (err) => {
+    console.error('UNHANDLED REJECTION! Shutting down...'.red.bold);
+    console.error(err.name, err.message);
+    if (server) {
+      server.close(() => {
+        process.exit(1);
+      });
+    } else {
+      process.exit(1);
+    }
+  });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION! Shutting down...'.red.bold);
-  console.error(err.name, err.message);
-  process.exit(1);
-});
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION! Shutting down...'.red.bold);
+    console.error(err.name, err.message);
+    if (server) {
+      server.close(() => {
+        process.exit(1);
+      });
+    } else {
+      process.exit(1);
+    }
+  });
+}
 
-module.exports = app; // For testing purposes
+// Export for testing purposes
+module.exports = {
+  app,
+  startServer: async (port = 0) => {
+    // For tests, use port 0 to get a random available port
+    // For normal operation, use the configured PORT
+    const serverPort = port || PORT;
+    await connectDB();
+    return app.listen(serverPort);
+  }
+};
