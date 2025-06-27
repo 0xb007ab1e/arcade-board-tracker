@@ -92,3 +92,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - All contributors and maintainers
 - The arcade gaming community for inspiration
+- Testing team for deployment verification
